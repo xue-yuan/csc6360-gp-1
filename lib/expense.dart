@@ -14,11 +14,15 @@ class Expense {
   final double amount;
   final String category;
   final String date;
-}
 
-enum Action {
-  edit,
-  delete,
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'amount': amount,
+      'category': category,
+      'date': date,
+    };
+  }
 }
 
 class ExpenseItem extends StatelessWidget {

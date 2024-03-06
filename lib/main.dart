@@ -60,8 +60,8 @@ class _ExpenseTrackerHomePageState extends State<ExpenseTrackerHomePage>
     if (amount <= 0) {
       return;
     }
-
-    ExpenseItem expense = ExpenseItem(
+    expense.Expense e = expense.Expense(
+      id: -1,
       name: name,
       amount: amount,
       category: category,
@@ -69,7 +69,7 @@ class _ExpenseTrackerHomePageState extends State<ExpenseTrackerHomePage>
           "${_expenseDate.year}-${_expenseDate.month.toString().padLeft(2, '0')}-${_expenseDate.day.toString().padLeft(2, '0')}",
     );
 
-    await _dbHelper.insertExpense(expense.toMap());
+    await _dbHelper.insertExpense(e.toMap());
 
     setState(() {
       _amountController.clear();
@@ -594,49 +594,5 @@ class _ExpenseTrackerHomePageState extends State<ExpenseTrackerHomePage>
         ],
       ),
     );
-  }
-}
-
-class ExpenseItem {
-  final String name;
-  final double amount;
-  final String category;
-  final String date;
-
-  ExpenseItem({
-    required this.name,
-    required this.amount,
-    required this.category,
-    required this.date,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'amount': amount,
-      'category': category,
-      'date': date,
-    };
-  }
-
-  @override
-  String toString() {
-    return 'Expense{name: $name, amount: $amount, category: $category, date: $date}';
-  }
-}
-
-class ExpenseCategory {
-  final String category;
-  final double totalAmount;
-  final double percentage;
-
-  ExpenseCategory(
-      {required this.category,
-      required this.totalAmount,
-      required this.percentage});
-
-  @override
-  String toString() {
-    return 'ExpenseCategory{name: $category, age: $totalAmount, percentage: $percentage}';
   }
 }
