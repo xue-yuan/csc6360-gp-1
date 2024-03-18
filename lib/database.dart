@@ -53,34 +53,6 @@ class DatabaseHelper {
     return await db.insert(expenseTable, row);
   }
 
-  Future<List<Map<String, dynamic>>> getExpenses() async {
-    Database db = await instance.database;
-    return await db.query(expenseTable);
-  }
-
-  Future<void> updateExpense(int id, String name, double amount,
-      String category, DateTime date) async {
-    Database db = await instance.database;
-    String formattedDate =
-        "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-    await db.update(
-      expenseTable,
-      {
-        'name': name,
-        'amount': amount,
-        'category': category,
-        'date': formattedDate
-      },
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  Future<void> deleteExpenseById(int id) async {
-    Database db = await instance.database;
-    await db.delete(expenseTable, where: 'id = ?', whereArgs: [id]);
-  }
-
   Future<List<Map<String, dynamic>>> getExpensesByDate(DateTime date) async {
     Database db = await instance.database;
     String formattedDate =
@@ -104,3 +76,26 @@ class DatabaseHelper {
         whereArgs: [formattedStartDate, formattedEndDate]);
   }
 }
+
+  Future<void> updateExpense(int id, String name, double amount,
+      String category, DateTime date) async {
+    Database db = await instance.database;
+    String formattedDate =
+        "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+    await db.update(
+      expenseTable,
+      {
+        'name': name,
+        'amount': amount,
+        'category': category,
+        'date': formattedDate
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> deleteExpenseById(int id) async {
+    Database db = await instance.database;
+    await db.delete(expenseTable, where: 'id = ?', whereArgs: [id]);
+  }
