@@ -37,6 +37,7 @@ class _ExpenseTrackerHomePageState extends State<ExpenseTrackerHomePage>
   final _amountController = TextEditingController();
   final _nameController = TextEditingController();
   final db.DatabaseHelper _dbHelper = db.DatabaseHelper.instance;
+
   DateTime _expenseDate = DateTime.now();
   DateTime _reportDate = DateTime.now();
   DateTime _chartDate = DateTime.now();
@@ -52,31 +53,6 @@ class _ExpenseTrackerHomePageState extends State<ExpenseTrackerHomePage>
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  void _addExpense(BuildContext context, String name, String amountText,
-      String category) async {
-    double amount = double.tryParse(amountText) ?? 0.0;
-    if (amount <= 0) {
-      return;
-    }
-    expense.Expense e = expense.Expense(
-      id: -1,
-      name: name,
-      amount: amount,
-      category: category,
-      date:
-          "${_expenseDate.year}-${_expenseDate.month.toString().padLeft(2, '0')}-${_expenseDate.day.toString().padLeft(2, '0')}",
-    );
-
-    await _dbHelper.insertExpense(e.toMap());
-
-    setState(() {
-      _amountController.clear();
-      _nameController.clear();
-      _expenseCategory = 'Food';
-      _expenseDate = DateTime.now();
-    });
   }
 
   void _showExpenseAddedDialog(BuildContext context) {
@@ -134,6 +110,31 @@ class _ExpenseTrackerHomePageState extends State<ExpenseTrackerHomePage>
     }
   }
 
+  void _addExpense(BuildContext context, String name, String amountText,
+      String category) async {
+    double amount = double.tryParse(amountText) ?? 0.0;
+    if (amount <= 0) {
+      return;
+    }
+    expense.Expense e = expense.Expense(
+      id: -1,
+      name: name,
+      amount: amount,
+      category: category,
+      date:
+          "${_expenseDate.year}-${_expenseDate.month.toString().padLeft(2, '0')}-${_expenseDate.day.toString().padLeft(2, '0')}",
+    );
+
+    await _dbHelper.insertExpense(e.toMap());
+
+    setState(() {
+      _amountController.clear();
+      _nameController.clear();
+      _expenseCategory = 'Food';
+      _expenseDate = DateTime.now();
+    });
+  }
+
   void _saveExpense(int id, String name, String amountText, String category,
       DateTime date) async {
     double amount = double.tryParse(amountText) ?? 0.0;
@@ -151,179 +152,6 @@ class _ExpenseTrackerHomePageState extends State<ExpenseTrackerHomePage>
     await _dbHelper.deleteExpenseById(expense.id);
     await _dbHelper.getExpensesByDate(DateTime.parse(expense.date));
     setState(() {});
-  }
-
-  Future<void> _showEditDialog(expense.Expense expense) async {
-    final nameEditController = TextEditingController(text: expense.name);
-    final amountEditController =
-        TextEditingController(text: expense.amount.toString());
-    String categoryEditText = expense.category;
-    DateTime editDate = DateTime.parse(expense.date);
-
-    return showDialog<void>(
-        context: context,
-        barrierDismissible: true,
-        builder: (BuildContext context) {
-          return AlertDialog(
-              title: const Text("Edit Expense"),
-              content: StatefulBuilder(
-                builder: (BuildContext context, StateSetter setState) {
-                  return Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextFormField(
-                          controller: nameEditController,
-                          decoration: const InputDecoration(labelText: 'Name'),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter an expense name';
-                            }
-                            return null;
-                          },
-                        ),
-                        TextFormField(
-                          controller: amountEditController,
-                          decoration:
-                              const InputDecoration(labelText: 'Amount'),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter an amount';
-                            }
-                            double? amount = double.tryParse(value);
-                            if (amount == null || amount <= 0) {
-                              return 'Please enter a valid amount';
-                            }
-                            return null;
-                          },
-                        ),
-                        DropdownButtonFormField<String>(
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select a category';
-                            }
-                            return null;
-                          },
-                          value: categoryEditText,
-                          items: _categories.map((String category) {
-                            return DropdownMenuItem<String>(
-                              value: category,
-                              child: Text(category),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              categoryEditText = value!;
-                            });
-                          },
-                          decoration:
-                              const InputDecoration(labelText: 'Category'),
-                        ),
-                        const SizedBox(height: 16.0),
-                        const Text('Select Date:'),
-                        const SizedBox(height: 8.0),
-                        Text(
-                          '${editDate.year}-${editDate.month}-${editDate.day}',
-                          key: ValueKey(editDate),
-                          style: const TextStyle(fontSize: 16.0),
-                        ),
-                        const SizedBox(height: 8.0),
-                        ElevatedButton(
-                          onPressed: () async {
-                            showDatePicker(
-                              context: context,
-                              initialDate: editDate,
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime.now(),
-                            ).then((selectedDate) {
-                              if (selectedDate != null) {
-                                setState(() {
-                                  editDate = selectedDate;
-                                });
-                                setState(() {});
-                              }
-                            });
-                          },
-                          child: const Text('Choose Date'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              actions: <Widget>[
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () {
-                      try {
-                        if (_formKey.currentState!.validate()) {
-                          _saveExpense(
-                              expense.id,
-                              nameEditController.text,
-                              amountEditController.text,
-                              categoryEditText,
-                              editDate);
-                        }
-                      } catch (e) {
-                        _showExpenseErrorDialog(context);
-                      }
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text("Save")),
-              ]);
-        });
-  }
-
-  Future<List<expense.Expense>> _expensesForSelectedDate(DateTime date) async {
-    List<Map<String, dynamic>> queryRows =
-        await _dbHelper.getExpensesByDate(date);
-    List<expense.Expense> expenses =
-        List<expense.Expense>.generate(queryRows.length, (index) {
-      return expense.Expense(
-        id: queryRows[index]['id'],
-        name: queryRows[index]['name'],
-        amount: queryRows[index]['amount'],
-        category: queryRows[index]['category'],
-        date: queryRows[index]['date'],
-      );
-    });
-
-    return expenses.toList();
-  }
-
-  Future<Map<String, double>> _getExpenseCategories() async {
-    List<Map<String, dynamic>> queryRows =
-        await _dbHelper.getExpensesByThisMonth(_chartDate);
-    Map<String, double> expenseMap = {};
-
-    for (var row in queryRows) {
-      if (expenseMap.containsKey(row['category'])) {
-        expenseMap[row['category']] ??= 0;
-        expenseMap[row['category']] =
-            expenseMap[row['category']]! + row['amount'].toDouble();
-      } else {
-        expenseMap[row['category']] = row['amount'];
-      }
-    }
-
-    return expenseMap;
   }
 
   Widget _buildPieChart() {
@@ -595,4 +423,178 @@ class _ExpenseTrackerHomePageState extends State<ExpenseTrackerHomePage>
       ),
     );
   }
+
+  Future<void> _showEditDialog(expense.Expense expense) async {
+    final nameEditController = TextEditingController(text: expense.name);
+    final amountEditController =
+        TextEditingController(text: expense.amount.toString());
+    String categoryEditText = expense.category;
+    DateTime editDate = DateTime.parse(expense.date);
+
+    return showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context) {
+          return AlertDialog(
+              title: const Text("Edit Expense"),
+              content: StatefulBuilder(
+                builder: (BuildContext context, StateSetter setState) {
+                  return Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextFormField(
+                          controller: nameEditController,
+                          decoration: const InputDecoration(labelText: 'Name'),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter an expense name';
+                            }
+                            return null;
+                          },
+                        ),
+                        TextFormField(
+                          controller: amountEditController,
+                          decoration:
+                              const InputDecoration(labelText: 'Amount'),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter an amount';
+                            }
+                            double? amount = double.tryParse(value);
+                            if (amount == null || amount <= 0) {
+                              return 'Please enter a valid amount';
+                            }
+                            return null;
+                          },
+                        ),
+                        DropdownButtonFormField<String>(
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select a category';
+                            }
+                            return null;
+                          },
+                          value: categoryEditText,
+                          items: _categories.map((String category) {
+                            return DropdownMenuItem<String>(
+                              value: category,
+                              child: Text(category),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              categoryEditText = value!;
+                            });
+                          },
+                          decoration:
+                              const InputDecoration(labelText: 'Category'),
+                        ),
+                        const SizedBox(height: 16.0),
+                        const Text('Select Date:'),
+                        const SizedBox(height: 8.0),
+                        Text(
+                          '${editDate.year}-${editDate.month}-${editDate.day}',
+                          key: ValueKey(editDate),
+                          style: const TextStyle(fontSize: 16.0),
+                        ),
+                        const SizedBox(height: 8.0),
+                        ElevatedButton(
+                          onPressed: () async {
+                            showDatePicker(
+                              context: context,
+                              initialDate: editDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
+                            ).then((selectedDate) {
+                              if (selectedDate != null) {
+                                setState(() {
+                                  editDate = selectedDate;
+                                });
+                                setState(() {});
+                              }
+                            });
+                          },
+                          child: const Text('Choose Date'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              actions: <Widget>[
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      try {
+                        if (_formKey.currentState!.validate()) {
+                          _saveExpense(
+                              expense.id,
+                              nameEditController.text,
+                              amountEditController.text,
+                              categoryEditText,
+                              editDate);
+                        }
+                      } catch (e) {
+                        _showExpenseErrorDialog(context);
+                      }
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text("Save")),
+              ]);
+        });
+  }
+
+  Future<List<expense.Expense>> _expensesForSelectedDate(DateTime date) async {
+    List<Map<String, dynamic>> queryRows =
+        await _dbHelper.getExpensesByDate(date);
+    List<expense.Expense> expenses =
+        List<expense.Expense>.generate(queryRows.length, (index) {
+      return expense.Expense(
+        id: queryRows[index]['id'],
+        name: queryRows[index]['name'],
+        amount: queryRows[index]['amount'],
+        category: queryRows[index]['category'],
+        date: queryRows[index]['date'],
+      );
+    });
+
+    return expenses.toList();
+  }
+
+  Future<Map<String, double>> _getExpenseCategories() async {
+    List<Map<String, dynamic>> queryRows =
+        await _dbHelper.getExpensesByThisMonth(_chartDate);
+    Map<String, double> expenseMap = {};
+
+    for (var row in queryRows) {
+      if (expenseMap.containsKey(row['category'])) {
+        expenseMap[row['category']] ??= 0;
+        expenseMap[row['category']] =
+            expenseMap[row['category']]! + row['amount'].toDouble();
+      } else {
+        expenseMap[row['category']] = row['amount'];
+      }
+    }
+
+    return expenseMap;
+  }
+
 }
